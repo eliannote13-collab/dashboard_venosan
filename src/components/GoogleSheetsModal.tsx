@@ -15,6 +15,8 @@ interface GoogleSheetsModalProps {
   currentSheetName: string;
   onSelectSpreadsheet: (details: SpreadsheetDetails, sheetName: string) => Promise<void>;
   onDisconnectSpreadsheet?: () => void;
+  onResetToDefault?: () => Promise<void>;
+  defaultUrl?: string;
   localSeedData?: any;
   isSyncing: boolean;
   onManualSync: () => Promise<void>;
@@ -27,10 +29,17 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
   currentSheetName,
   onSelectSpreadsheet,
   onDisconnectSpreadsheet,
+  onResetToDefault,
+  defaultUrl,
   isSyncing,
   onManualSync,
 }) => {
-  const [manualIdOrUrl, setManualIdOrUrl] = useState('');
+  const [manualIdOrUrl, setManualIdOrUrl] = useState(() => {
+    if (currentSpreadsheet) {
+      return `https://docs.google.com/spreadsheets/d/${currentSpreadsheet.id}/edit`;
+    }
+    return defaultUrl || '';
+  });
   const [loadedDetails, setLoadedDetails] = useState<SpreadsheetDetails | null>(
     currentSpreadsheet
   );
@@ -205,6 +214,22 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
                 )}
               </button>
             </div>
+
+            {defaultUrl && (
+              <div className="flex items-center justify-between text-[11px] px-1 text-secondary">
+                <span>Planilha padrão pré-configurada no sistema</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setManualIdOrUrl(defaultUrl);
+                  }}
+                  className="text-primary hover:underline font-semibold cursor-pointer flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[13px]">restart_alt</span>
+                  Preencher Link Padrão
+                </button>
+              </div>
+            )}
 
             {/* Passo a Passo */}
             <div className="mt-1 p-2.5 rounded-lg bg-surface-container border border-surface-dim/60 text-[11px] text-secondary flex flex-col gap-1 leading-snug">

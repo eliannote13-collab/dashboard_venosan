@@ -26,6 +26,12 @@ import {
 const STORAGE_KEY_SPREADSHEET = 'venosan_connected_spreadsheet';
 const STORAGE_KEY_DATA = 'venosan_sheet_cached_data';
 
+export const DEFAULT_SPREADSHEET_URL =
+  'https://docs.google.com/spreadsheets/d/178EySNqiOxJPDwDW5G2VrY-ZGNfgVeMn6j0pGmZizFM/edit?usp=sharing';
+export const DEFAULT_SPREADSHEET_ID = '178EySNqiOxJPDwDW5G2VrY-ZGNfgVeMn6j0pGmZizFM';
+export const DEFAULT_SPREADSHEET_TITLE = 'Base de Movimentação (Padrão)';
+export const DEFAULT_SHEET_NAME = 'base';
+
 export default function App() {
   const [data, setData] = useState<MovementItem[]>(() => {
     try {
@@ -58,24 +64,29 @@ export default function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isSheetsModalOpen, setIsSheetsModalOpen] = useState(false);
   
-  // Persistent Spreadsheet Connection State
+  // Persistent Spreadsheet Connection State (Default to the specified Google Sheet)
   const [currentSpreadsheet, setCurrentSpreadsheet] = useState<SpreadsheetDetails | null>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_SPREADSHEET);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed.id && parsed.title) {
+        if (parsed.id) {
           return {
             id: parsed.id,
-            title: parsed.title,
-            sheets: [{ sheetId: 0, title: parsed.sheetName || 'base' }],
+            title: parsed.title || DEFAULT_SPREADSHEET_TITLE,
+            sheets: [{ sheetId: 0, title: parsed.sheetName || DEFAULT_SHEET_NAME }],
           };
         }
       }
     } catch (e) {
       console.warn('Erro ao carregar planilha salva:', e);
     }
-    return null;
+    // Planilha padrão do sistema (não exige inserção manual pelo usuário)
+    return {
+      id: DEFAULT_SPREADSHEET_ID,
+      title: DEFAULT_SPREADSHEET_TITLE,
+      sheets: [{ sheetId: 0, title: DEFAULT_SHEET_NAME }],
+    };
   });
 
   const [currentSheetName, setCurrentSheetName] = useState<string>(() => {
@@ -83,12 +94,12 @@ export default function App() {
       const stored = localStorage.getItem(STORAGE_KEY_SPREADSHEET);
       if (stored) {
         const parsed = JSON.parse(stored);
-        return parsed.sheetName || 'base';
+        return parsed.sheetName || DEFAULT_SHEET_NAME;
       }
     } catch (e) {
       // ignore
     }
-    return 'base';
+    return DEFAULT_SHEET_NAME;
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -170,35 +181,45 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Startup auto-sync for permanently connected spreadsheet (runs immediately on mount)
+  // Startup auto-sync for connected spreadsheet (runs immediately on mount)
   useEffect(() => {
+    let sheetId = DEFAULT_SPREADSHEET_ID;
+    let sheetName = DEFAULT_SHEET_NAME;
+
     const stored = localStorage.getItem(STORAGE_KEY_SPREADSHEET);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
         if (parsed.id) {
-          syncSpreadsheet(parsed.id, parsed.sheetName || 'base', accessToken);
+          sheetId = parsed.id;
+          sheetName = parsed.sheetName || DEFAULT_SHEET_NAME;
         }
       } catch (e) {
         // ignore
       }
     }
+    syncSpreadsheet(sheetId, sheetName, accessToken);
   }, []);
 
   // Re-sync automatically when user returns to this browser tab
   useEffect(() => {
     const handleFocus = () => {
+      let sheetId = DEFAULT_SPREADSHEET_ID;
+      let sheetName = DEFAULT_SHEET_NAME;
+
       const stored = localStorage.getItem(STORAGE_KEY_SPREADSHEET);
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
           if (parsed.id) {
-            syncSpreadsheet(parsed.id, parsed.sheetName || 'base', accessToken);
+            sheetId = parsed.id;
+            sheetName = parsed.sheetName || DEFAULT_SHEET_NAME;
           }
         } catch (e) {
           // ignore
         }
       }
+      syncSpreadsheet(sheetId, sheetName, accessToken);
     };
 
     window.addEventListener('focus', handleFocus);
@@ -382,8 +403,23 @@ export default function App() {
       // ignore
     }
     setCurrentSpreadsheet(null);
-    setCurrentSheetName('Fluxo_Saidas');
+    setCurrentSheetName(DEFAULT_SHEET_NAME);
     setLastSyncTime(null);
+  };
+
+  // Reset to default spreadsheet
+  const handleResetToDefaultSpreadsheet = async () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY_SPREADSHEET);
+    } catch (e) {
+      // ignore
+    }
+    const defaultDetails: SpreadsheetDetails = {
+      id: DEFAULT_SPREADSHEET_ID,
+      title: DEFAULT_SPREADSHEET_TITLE,
+      sheets: [{ sheetId: 0, title: DEFAULT_SHEET_NAME }],
+    };
+    await handleSelectSpreadsheet(defaultDetails, DEFAULT_SHEET_NAME);
   };
 
   // Manual Sync
@@ -658,6 +694,8 @@ export default function App() {
         currentSheetName={currentSheetName}
         onSelectSpreadsheet={handleSelectSpreadsheet}
         onDisconnectSpreadsheet={handleDisconnectSpreadsheet}
+        onResetToDefault={handleResetToDefaultSpreadsheet}
+        defaultUrl={DEFAULT_SPREADSHEET_URL}
         localSeedData={INITIAL_DATA}
         isSyncing={isSyncing}
         onManualSync={handleManualSync}

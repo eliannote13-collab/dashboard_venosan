@@ -230,7 +230,7 @@ export default function App() {
     setFilters((prev) => ({ ...prev, ...updated }));
   };
 
-  // Type counts for sidebar badges
+  // Type counts for sidebar badges (sum of units per modality, matching central KPI cards)
   const typeCounts = useMemo(() => {
     const counts: Record<MovementType, number> = {
       Comodato: 0,
@@ -238,11 +238,29 @@ export default function App() {
       Locação: 0,
       RETORNO: 0,
     };
+    const gSearch = filters.globalSearch.toLowerCase().trim();
+    const tSearch = filters.tableSearch.toLowerCase().trim();
+    const clean = (s: string) =>
+      (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
     data.forEach((item) => {
-      counts[item.tipo] = (counts[item.tipo] || 0) + 1;
+      // Respect year filter if selected
+      if (filters.selectedYear !== 'all' && !item.mes_calc.startsWith(filters.selectedYear)) {
+        return;
+      }
+      // Respect search if active
+      if (gSearch || tSearch) {
+        const itemSearchText = clean(
+          `${item.sku} ${item.cliente} ${item.descricao} ${item.nf} ${item.cfop} ${item.tipo} ${item.cidade || ''} ${item.uf || ''} ${item.data_nf} ${item.mes_calc}`
+        );
+        if (gSearch && !itemSearchText.includes(clean(gSearch))) return;
+        if (tSearch && !itemSearchText.includes(clean(tSearch))) return;
+      }
+
+      counts[item.tipo] = (counts[item.tipo] || 0) + (item.qtd || 0);
     });
     return counts;
-  }, [data]);
+  }, [data, filters.selectedYear, filters.globalSearch, filters.tableSearch]);
 
   // Main filtered dataset
   const filteredData = useMemo(() => {
@@ -515,6 +533,11 @@ export default function App() {
     document.body.removeChild(link);
   };
 
+  const totalFilteredUnits = useMemo(
+    () => filteredData.reduce((acc, item) => acc + (item.qtd || 0), 0),
+    [filteredData]
+  );
+
   return (
     <div className="bg-background font-body-md text-on-surface antialiased min-h-screen">
       {/* Navigation Sidebar Lateral */}
@@ -522,6 +545,7 @@ export default function App() {
         filters={filters}
         onFilterChange={handleFilterChange}
         filteredCount={filteredData.length}
+        filteredUnits={totalFilteredUnits}
         totalCount={data.length}
         isOpenMobile={isOpenMobile}
         onCloseMobile={() => setIsOpenMobile(false)}

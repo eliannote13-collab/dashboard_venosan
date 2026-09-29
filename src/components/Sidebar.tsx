@@ -5,6 +5,7 @@ interface SidebarProps {
   filters: FilterState;
   onFilterChange: (filters: Partial<FilterState>) => void;
   filteredCount: number;
+  filteredUnits?: number;
   totalCount: number;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
@@ -19,6 +20,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   filters,
   onFilterChange,
   filteredCount,
+  filteredUnits,
+  totalCount,
   isOpenMobile,
   onCloseMobile,
   typeCounts,
@@ -200,8 +203,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {type === 'RETORNO' ? 'Retorno' : type}
                     </span>
                   </div>
-                  <span className="font-data-tabular text-[11px] text-secondary bg-surface-container px-1.5 py-0.5 rounded">
-                    {count}
+                  <span className="font-data-tabular text-[11px] text-secondary bg-surface-container px-1.5 py-0.5 rounded font-semibold">
+                    {count} un
                   </span>
                 </label>
               );
@@ -274,12 +277,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-space-md border-t border-surface-dim bg-surface-container-low">
           <div className="flex items-center justify-between font-label-sm text-label-sm text-secondary">
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px] text-primary">database</span>
-              Registros Processados
+              <span className="material-symbols-outlined text-[14px] text-primary">inventory_2</span>
+              Volume em Unidades
             </span>
             <span className="font-data-tabular text-on-surface font-bold">
-              {filteredCount}
+              {filteredUnits !== undefined ? filteredUnits : filteredCount} un
             </span>
+          </div>
+          <div className="flex items-center justify-between mt-1 text-[11px] text-secondary font-data-tabular">
+            <span>Linhas Filtradas:</span>
+            <span>{filteredCount} de {totalCount}</span>
           </div>
           <div className="flex items-center justify-between mt-2 pt-2 border-t border-surface-dim/60 font-table-header text-[10px] text-secondary">
             <span className="flex items-center gap-1.5">

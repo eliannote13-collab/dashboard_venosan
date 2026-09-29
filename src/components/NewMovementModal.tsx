@@ -153,7 +153,7 @@ export const NewMovementModal: React.FC<NewMovementModalProps> = ({
           <div className="grid grid-cols-3 gap-space-md">
             <div className="col-span-1">
               <label className="font-table-header text-table-header uppercase text-secondary block mb-1">
-                SKU
+                Cod.
               </label>
               <select
                 value={sku}

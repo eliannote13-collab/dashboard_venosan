@@ -79,7 +79,7 @@ export const MovementDetailModal: React.FC<MovementDetailModalProps> = ({
             </div>
             <div className="p-space-sm bg-surface-container-low/50 rounded border border-surface-dim">
               <span className="font-table-header text-table-header text-secondary uppercase block mb-0.5">
-                Código SKU
+                Código (Cod.)
               </span>
               <span className="font-data-tabular-bold text-primary">{item.sku}</span>
             </div>

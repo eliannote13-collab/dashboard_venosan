@@ -12,6 +12,7 @@ interface SidebarProps {
   onOpenSheetsModal: () => void;
   currentSpreadsheetTitle?: string;
   isSyncing?: boolean;
+  semRetornoCount?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -24,6 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSheetsModal,
   currentSpreadsheetTitle,
   isSyncing,
+  semRetornoCount = 0,
 }) => {
   const toggleType = (type: MovementType) => {
     const exists = filters.selectedTypes.includes(type);
@@ -36,8 +38,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onFilterChange({ selectedTypes: newTypes });
   };
 
-  const selectAllTypes = () => {
-    onFilterChange({ selectedTypes: ['Comodato', 'Demonstração', 'Locação', 'RETORNO'] });
+  const selectAllAndShowAll = () => {
+    onFilterChange({
+      selectedTypes: ['Comodato', 'Demonstração', 'Locação', 'RETORNO'],
+      onlySemRetorno: false,
+    });
   };
 
   const clearAllTypes = () => {
@@ -46,8 +51,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const modules = [
     { id: 'fluxo', label: 'Fluxo de Saídas', code: '01' },
-    { id: 'retencao', label: 'Auditoria de Retenção', code: '02' },
-    { id: 'nfs', label: 'Histórico de NFs', code: '03' },
   ];
 
   return (
@@ -75,9 +78,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="flex flex-col">
                 <span className="font-headline-md text-[14px] leading-tight font-bold text-on-surface tracking-tight">
                   VENOSAN L&H
-                </span>
-                <span className="font-table-header text-[10px] text-secondary tracking-wider uppercase">
-                  Gestão Hospitalar
                 </span>
               </div>
             </div>
@@ -122,7 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })}
           </nav>
 
-          {/* Filtro de Modalidade */}
+          {/* Filtro de Modalidade e Retenção */}
           <div className="mt-space-lg px-space-sm pb-space-xs mb-space-xs border-b border-surface-dim flex items-center justify-between">
             <span className="font-table-header text-table-header uppercase text-secondary tracking-wider">
               Filtro de Modalidade
@@ -130,10 +130,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={selectAllTypes}
-                className="text-[10px] font-table-header text-primary hover:underline"
+                onClick={selectAllAndShowAll}
+                className="text-[10px] font-table-header text-primary hover:underline font-bold"
               >
-                Todos
+                Mostrar Todos
               </button>
               <span className="text-[10px] text-surface-dim">|</span>
               <button
@@ -146,6 +146,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
+          {/* Filtro Especial: Clientes Sem Retorno */}
+          <div className="px-space-sm mb-space-xs">
+            <label
+              className={`flex items-center justify-between text-body-sm cursor-pointer py-1.5 px-2 rounded-lg border transition-all select-none ${
+                filters.onlySemRetorno
+                  ? 'bg-error-container border-primary/40 text-on-error-container font-semibold shadow-xs'
+                  : 'bg-surface-container-low/70 border-surface-dim hover:bg-surface-container text-on-surface'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={!!filters.onlySemRetorno}
+                  onChange={(e) => onFilterChange({ onlySemRetorno: e.target.checked })}
+                  className="accent-primary rounded-xs w-4 h-4 cursor-pointer"
+                />
+                <span className="text-body-sm font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                  Clientes Sem Retorno
+                </span>
+              </div>
+              <span
+                className={`font-data-tabular-bold text-[11px] px-1.5 py-0.5 rounded ${
+                  filters.onlySemRetorno
+                    ? 'bg-primary text-on-primary'
+                    : 'bg-surface-container text-primary font-bold'
+                }`}
+              >
+                {semRetornoCount} un
+              </span>
+            </label>
+          </div>
+
+          {/* Modalidades Individuais */}
           <div className="flex flex-col gap-space-xs px-space-sm">
             {(['Comodato', 'Demonstração', 'Locação', 'RETORNO'] as MovementType[]).map((type) => {
               const checked = filters.selectedTypes.includes(type);
@@ -217,8 +251,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="font-label-md text-label-md text-on-surface font-semibold truncate">
                 {currentSpreadsheetTitle || 'Armazenamento Local'}
               </span>
-              <span className="font-data-tabular text-[10px] text-secondary">
-                {currentSpreadsheetTitle ? 'Google Sheets Integrado' : 'Pronto p/ conectar'}
+              <span className="font-data-tabular text-[10px] text-primary truncate font-medium">
+                fiscalvenosanbrasil@gmail.com
+              </span>
+              <span className="font-data-tabular text-[9px] text-secondary">
+                {currentSpreadsheetTitle ? 'Google Sheets Conectado' : 'Google Drive Oficial'}
               </span>
             </div>
             <button

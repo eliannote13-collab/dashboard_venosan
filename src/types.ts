@@ -23,6 +23,7 @@ export interface FilterState {
   selectedTypes: MovementType[];
   selectedYear: string; // 'all' | '2025' | '2026'
   activeModule: string;
+  onlySemRetorno?: boolean;
 }
 
 export interface KpiSummary {

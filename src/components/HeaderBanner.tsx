@@ -4,7 +4,6 @@ import { SpreadsheetDetails } from '../lib/sheetsService';
 interface HeaderBannerProps {
   globalSearch: string;
   onSearchChange: (value: string) => void;
-  onOpenNewMovement: () => void;
   onExportCsv: () => void;
   onToggleSidebarMobile: () => void;
   onOpenSheetsModal: () => void;
@@ -18,7 +17,6 @@ interface HeaderBannerProps {
 export const HeaderBanner: React.FC<HeaderBannerProps> = ({
   globalSearch,
   onSearchChange,
-  onOpenNewMovement,
   onExportCsv,
   onToggleSidebarMobile,
   onOpenSheetsModal,
@@ -39,16 +37,8 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
 
         <div className="w-2 h-7 bg-primary rounded-full shrink-0"></div>
         <div className="flex flex-col">
-          <div className="flex items-center gap-space-xs">
-            <span className="font-data-tabular-bold text-table-header uppercase text-secondary tracking-widest">
-              Painel Consolidado
-            </span>
-            <span className="px-space-xs py-0.5 rounded bg-surface-container-high text-on-surface-variant font-data-tabular text-[10px] font-semibold">
-              LIVE DATA
-            </span>
-          </div>
           <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
-            Fluxo de Saídas e Controle de Retenção
+            Operações Remessas e Devoluções
           </h1>
         </div>
       </div>
@@ -65,7 +55,7 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
             value={globalSearch}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full bg-transparent border-0 p-0 font-body-sm text-body-sm text-on-surface placeholder:text-secondary focus:outline-none focus:ring-0"
-            placeholder="Filtrar por SKU (ex: 620206) ou Cliente..."
+            placeholder="Filtrar por Cod. (ex: 620206), NF ou Cliente..."
           />
           {globalSearch && (
             <button
@@ -133,14 +123,6 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
         >
           <span className="material-symbols-outlined text-[16px] text-secondary">download</span>
           <span>CSV</span>
-        </button>
-
-        <button
-          onClick={onOpenNewMovement}
-          className="flex items-center gap-1 px-space-md py-1.5 rounded bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md shadow-xs transition-colors"
-        >
-          <span className="material-symbols-outlined text-[16px]">add_circle</span>
-          <span className="whitespace-nowrap">Nova Saída</span>
         </button>
       </div>
     </div>

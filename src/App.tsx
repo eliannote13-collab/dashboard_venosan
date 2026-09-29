@@ -68,7 +68,7 @@ export default function App() {
           return {
             id: parsed.id,
             title: parsed.title,
-            sheets: [{ sheetId: 0, title: parsed.sheetName || 'Fluxo_Saidas' }],
+            sheets: [{ sheetId: 0, title: parsed.sheetName || 'base' }],
           };
         }
       }
@@ -83,12 +83,12 @@ export default function App() {
       const stored = localStorage.getItem(STORAGE_KEY_SPREADSHEET);
       if (stored) {
         const parsed = JSON.parse(stored);
-        return parsed.sheetName || 'Fluxo_Saidas';
+        return parsed.sheetName || 'base';
       }
     } catch (e) {
       // ignore
     }
-    return 'Fluxo_Saidas';
+    return 'base';
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -155,7 +155,7 @@ export default function App() {
           try {
             const parsed = JSON.parse(stored);
             if (parsed.id) {
-              syncSpreadsheet(parsed.id, parsed.sheetName || 'Fluxo_Saidas', token);
+              syncSpreadsheet(parsed.id, parsed.sheetName || 'base', token);
             }
           } catch (e) {
             // ignore
@@ -177,7 +177,7 @@ export default function App() {
       try {
         const parsed = JSON.parse(stored);
         if (parsed.id) {
-          syncSpreadsheet(parsed.id, parsed.sheetName || 'Fluxo_Saidas', accessToken);
+          syncSpreadsheet(parsed.id, parsed.sheetName || 'base', accessToken);
         }
       } catch (e) {
         // ignore
@@ -193,7 +193,7 @@ export default function App() {
         try {
           const parsed = JSON.parse(stored);
           if (parsed.id) {
-            syncSpreadsheet(parsed.id, parsed.sheetName || 'Fluxo_Saidas', accessToken);
+            syncSpreadsheet(parsed.id, parsed.sheetName || 'base', accessToken);
           }
         } catch (e) {
           // ignore
@@ -228,22 +228,33 @@ export default function App() {
     const gSearch = filters.globalSearch.toLowerCase().trim();
     const tSearch = filters.tableSearch.toLowerCase().trim();
 
+    // Calculate balances for each client to check retention
+    const clientBalances: Record<string, number> = {};
+    data.forEach((item) => {
+      clientBalances[item.cliente] = (clientBalances[item.cliente] || 0) + item.qtd_liquida;
+    });
+
     return data.filter((item) => {
+      // Clientes Sem Retorno filter (only clients with positive retention)
+      if (filters.onlySemRetorno) {
+        if ((clientBalances[item.cliente] || 0) <= 0) {
+          return false;
+        }
+      }
+
+      // Accent-insensitive normalization helper
+      const clean = (s: string) =>
+        (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+      const itemSearchText = clean(
+        `${item.sku} ${item.cliente} ${item.descricao} ${item.nf} ${item.cfop} ${item.tipo} ${item.cidade || ''} ${item.uf || ''} ${item.data_nf} ${item.mes_calc}`
+      );
+
       // Global Search
-      const matchesGlobal =
-        !gSearch ||
-        item.sku.toLowerCase().includes(gSearch) ||
-        item.cliente.toLowerCase().includes(gSearch) ||
-        item.descricao.toLowerCase().includes(gSearch) ||
-        item.nf.toLowerCase().includes(gSearch);
+      const matchesGlobal = !gSearch || itemSearchText.includes(clean(gSearch));
 
       // Table Search
-      const matchesTable =
-        !tSearch ||
-        item.sku.toLowerCase().includes(tSearch) ||
-        item.cliente.toLowerCase().includes(tSearch) ||
-        item.descricao.toLowerCase().includes(tSearch) ||
-        item.nf.toLowerCase().includes(tSearch);
+      const matchesTable = !tSearch || itemSearchText.includes(clean(tSearch));
 
       // Type Filter
       const matchesType = filters.selectedTypes.includes(item.tipo);
@@ -482,6 +493,7 @@ export default function App() {
         onOpenSheetsModal={() => setIsSheetsModalOpen(true)}
         currentSpreadsheetTitle={currentSpreadsheet?.title}
         isSyncing={isSyncing}
+        semRetornoCount={summary.semRetorno}
       />
 
       {/* Conteúdo Principal */}
@@ -492,7 +504,6 @@ export default function App() {
             <HeaderBanner
               globalSearch={filters.globalSearch}
               onSearchChange={(val) => handleFilterChange({ globalSearch: val })}
-              onOpenNewMovement={() => setIsNewModalOpen(true)}
               onExportCsv={handleExportCsv}
               onToggleSidebarMobile={() => setIsOpenMobile(true)}
               onOpenSheetsModal={() => setIsSheetsModalOpen(true)}
@@ -550,13 +561,20 @@ export default function App() {
             {(filters.globalSearch ||
               filters.tableSearch ||
               filters.selectedTypes.length < 4 ||
-              filters.selectedYear !== 'all') && (
+              filters.selectedYear !== 'all' ||
+              filters.onlySemRetorno) && (
               <div className="flex items-center justify-between px-space-md py-1.5 rounded-lg bg-surface-container-high border border-surface-dim font-body-sm text-secondary">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="material-symbols-outlined text-[16px] text-primary">
                     filter_alt
                   </span>
                   <span>Filtros ativos:</span>
+                  {filters.onlySemRetorno && (
+                    <span className="bg-error-container text-on-error-container px-2 py-0.5 rounded font-data-tabular text-[11px] font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                      Apenas Clientes Sem Retorno
+                    </span>
+                  )}
                   {filters.globalSearch && (
                     <span className="bg-surface-container-lowest px-2 py-0.5 rounded font-data-tabular text-on-surface">
                       Busca: "{filters.globalSearch}"
@@ -581,11 +599,12 @@ export default function App() {
                       selectedTypes: ['Comodato', 'Demonstração', 'Locação', 'RETORNO'],
                       selectedYear: 'all',
                       activeModule: 'fluxo',
+                      onlySemRetorno: false,
                     })
                   }
                   className="text-primary hover:underline text-body-sm font-semibold shrink-0"
                 >
-                  Redefinir Filtros
+                  Mostrar Todos / Redefinir
                 </button>
               </div>
             )}

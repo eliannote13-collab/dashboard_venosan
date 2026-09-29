@@ -2,6 +2,21 @@ import { MovementItem } from '../types';
 
 export const INITIAL_DATA: MovementItem[] = [
   {
+    id: "mov-00",
+    data_nf: "02/10/2025",
+    mes_calc: "2025-10",
+    nf: "365410",
+    cfop: "6.908",
+    sku: "CTC-7",
+    descricao: "CTC-7 SISTEMA DE COMPRESSAO FRIO-QUENTE",
+    cliente: "HOSPITAL SANTA CATARINA DE BLUMENAU",
+    tipo: "Comodato",
+    qtd: 2,
+    qtd_liquida: 2,
+    cidade: "Blumenau",
+    uf: "SC"
+  },
+  {
     id: "mov-01",
     data_nf: "10/10/2025",
     mes_calc: "2025-10",
